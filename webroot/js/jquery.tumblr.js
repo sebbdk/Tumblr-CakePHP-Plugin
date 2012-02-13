@@ -3,8 +3,9 @@
 	var methods = {
 		//public function
 		getStream:function(){
+			var _this = this;
 			$(this).Tumblr('API', undefined, function(data){
-				$(this).Tumblr('_loadData', data);
+				$(_this).Tumblr('_loadData', data);
 			});
 		},
 		getTag:function(){},
@@ -25,11 +26,11 @@
 		_loadData:function(data, types) {
 			types = (types != undefined) ? types:'all';
 			
-			this.html('');
+			$(this).html('');
 			for(var post in data.posts){
 				if(types == 'all' || $.inArray(data.posts[post]["type"], types) != -1) {
 					var item = $(settings.template).clone();
-					item.find('.tumblr-type').html(data.posts[post]["type"]);
+					//item.find('.tumblr-type').html(data.posts[post]["type"]);
 					item.find('.tumblr-date').html(data.posts[post]["date"]);
 					item.find('.tumblr-url').html(data.posts[post]["url"]);
 					item.find('.tumblr-id').html(data.posts[post]["id"]);
@@ -49,15 +50,14 @@
 							break;
 						case 'photo':
 							item.addClass('tumblr-photo');
-							var title = data.posts[post]["photo-caption"];
-							title = title.replace("<p>", "");
-							title = title.replace("</p>", "");
+							var text = data.posts[post]["photo-caption"];
 							
-							item.find('.tumblr-title').html(title);
-							item.find('.tumblr-body').html('<img src="'+data.posts[post]["photo-url-400"]+'">');
+							item.find('.tumblr-title').html("Image time!");
+							item.find('.tumblr-body').html('<img src="'+data.posts[post]["photo-url-400"]+'">' + text);
 							break;
 					}
-					this.prepend(item);
+					this.append(item);
+					item.fadeIn();
 				}//endif
 			}//end for each
 		}//end func
@@ -88,17 +88,4 @@
 		}
 	};
 	
-})( jQuery );
-
-
-
-
-(function( $ ){
-
-  $.fn.test = function() {
-  
-    	
-    console.log(this);
-
-  };
 })( jQuery );
