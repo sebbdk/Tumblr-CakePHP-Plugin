@@ -1,89 +1,104 @@
-// Should be when the document is ready, check and load.
-// MADE BY EAX (eax@eax.dk)
-
-$(document).ready(function (){
-	var current_url = jQuery(location).attr('href');
-	var regex_url_check = current_url.match("\/blogs\/about");
-	var blog_name = "sebbdk"; // YOUR BLOG NAME
-	var url = "http://"+blog_name+".tumblr.com/api/read/json?"; 
+(function($) {
 	
-	var oauth = "YOUROAUTHKEY";
-	var new_url = "http://api.tumblr.com/v2/blog/eaxbin.tumblr.com/posts?api_key="+oauth;
-	
-	function empty_holder(){
-		$('#headline').empty();
-		$('#the_text').empty();
-		$('#breadcrumbs').empty();
-		$('#answer').empty();
-		$('#question').empty();
-	}
-
-		$.getJSON(url+'&callback=?&num=50', function(data) {
-			$("#ajax_loader").remove();
+	var methods = {
+		//public function
+		getStream:function(){
+			$(this).Tumblr('API', undefined, function(data){
+				$(this).Tumblr('_loadData', data);
+			});
+		},
+		getTag:function(){},
+		API:function(url, callback){
+			var $self = $(this);
+			$self.trigger('loading');
 			
-			for(var current in data.posts){
-				var post_type = data.posts[current]["type"];
-				var timestamp = data.posts[current]["unix-timestamp"];
-				var date = data.posts[current].date;
-				var post_url = data.posts[current].url;
-				var post_id = data.posts[current].id;
-				$("#content").addClass(post_id);
-				
-				console.log("The type is: " + post_type + " and it was posted: " + date);
-								
-								
-				if(post_type.match('.*?regular.*?')){
-					empty_holder();
-					console.log("This is a regular post");
-					
-					var title = data.posts[current]["regular-title"];
-					var text = data.posts[current]["regular-body"];
-					var tags = data.posts[current].tags;
-					var breadcrumbs = "Posted: " + date + "<br>Tags: " + tags;
-					
-					$('#headline').html(title);
-					$('#the_text').html(text);
-					$('#breadcrumbs').html(breadcrumbs);
-					$('#blog_box').clone().appendTo('#blog_holder').css('visibility', 'visible');
-					empty_holder();
-				} 
-				if(post_type.match(".*?answer.*?")){
-					empty_holder();
-					
-					var answer = data.posts[current].answer;
-					var question = data.posts[current].question;
-					
-					$('#question').html(question);
-					$('#answer').html(answer);
-					$('#blog_box').clone().appendTo('#blog_holder').css('visibility', 'visible');
-					empty_holder();
-				} 
-				if(post_type.match(".*?photo.*?")){
-					empty_holder();
-					console.log("This is an image");
-					
-					var title = data.posts[current]["photo-caption"];
-					title = title.replace("<p>", "");
-					title = title.replace("</p>", "");
-					var breadcrumbs = "Posted: " + date + "<br>Tags: " + tags;
-					var photo = data.posts[current]["photo-url-400"];
-					console.log(title);
-					console.log(breadcrumbs);
-					console.log(photo);
-					
-					$('#headline').html(title);
-					$('#breadcrumbs').html(breadcrumbs);
-					$('#the_text').html("<img src='"+photo+"'>");
-					$('#blog_box').clone().appendTo('#blog_holder').css('visibility', 'visible');
-					empty_holder();
+			url = (url == undefined) ? '&callback=?&num=50':url;
+			
+			$.getJSON(settings.APIPath+url, function(data) {
+				$self.trigger('loaded');
+				if(callback) {
+					callback(data);
 				}
-				
-				
-				console.log(post_type);
-				console.log(data.posts[current]);
-				/*console.log(data.posts[current].date);
-				console.log(data.posts[current]["regular-body"]);*/
-			}
+			});
+		},
+		//private functions
+		_loadData:function(data, types) {
+			types = (types != undefined) ? types:'all';
 			
-		});
-});
+			this.html('');
+			for(var post in data.posts){
+				if(types == 'all' || $.inArray(data.posts[post]["type"], types) != -1) {
+					var item = $(settings.template).clone();
+					item.find('.tumblr-type').html(data.posts[post]["type"]);
+					item.find('.tumblr-date').html(data.posts[post]["date"]);
+					item.find('.tumblr-url').html(data.posts[post]["url"]);
+					item.find('.tumblr-id').html(data.posts[post]["id"]);
+					item.find('.tumblr-tags').html(data.posts[post].tags);
+					item.find('.tumblr-breadcrumbs').html("Posted: " + data.posts[post]["date"] + "<br>Tags: " + data.posts[post].tags);
+					
+					switch(data.posts[post]["type"]){
+						case 'regular':
+							item.addClass('tumblr-regular');
+							item.find('.tumblr-title').html(data.posts[post]["regular-title"]);
+							item.find('.tumblr-body').html(data.posts[post]["regular-body"]);
+							break;
+						case 'answer':
+							item.addClass('tumblr-answer');
+							item.find('.tumblr-title').html(data.posts[post].answer);
+							item.find('.tumblr-body').html(data.posts[post].question);
+							break;
+						case 'photo':
+							item.addClass('tumblr-photo');
+							var title = data.posts[post]["photo-caption"];
+							title = title.replace("<p>", "");
+							title = title.replace("</p>", "");
+							
+							item.find('.tumblr-title').html(title);
+							item.find('.tumblr-body').html('<img src="'+data.posts[post]["photo-url-400"]+'">');
+							break;
+					}
+					this.prepend(item);
+				}//endif
+			}//end for each
+		}//end func
+	};
+	
+	var settings = {
+		key:'',
+		blogName:'',
+		APIPath:'',
+		template:'#entryTemplate',
+	};
+	
+	//where did i leave off??
+	//the this reference in _loadData() point to the wrong element for some reason :|
+	
+	$.fn.Tumblr = function(arg) {
+		if(typeof(arg) == 'object') {
+			settings = $.extend(settings , arg);
+			settings.APIPath = "http://"+arg.blogName+".tumblr.com/api/read/json?"
+		} else if(typeof(arg) == 'string') {
+		    if ( methods[arg] ) {
+		      return methods[arg].apply( this, Array.prototype.slice.call( arguments, 1 ));
+		    } else if ( typeof arg === 'object' || ! arg ) {
+		      return methods.init.apply( this, arguments );
+		    } else {
+		      $.error( 'Method ' +  arg + ' does not exist on jQuery.tooltip' );
+		    }
+		}
+	};
+	
+})( jQuery );
+
+
+
+
+(function( $ ){
+
+  $.fn.test = function() {
+  
+    	
+    console.log(this);
+
+  };
+})( jQuery );
