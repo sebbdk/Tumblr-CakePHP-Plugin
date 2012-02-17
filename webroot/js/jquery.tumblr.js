@@ -71,7 +71,9 @@
 	};
 	
 	//where did i leave off??
-	//the this reference in _loadData() point to the wrong element for some reason :|
+	//implement various sorting
+	//implement loader
+	//figure oure a menue design
 	
 	$.fn.Tumblr = function(arg) {
 		if(typeof(arg) == 'object') {

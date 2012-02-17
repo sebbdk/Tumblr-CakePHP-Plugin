@@ -12,7 +12,7 @@
 </div>
 
 <div id="blogHolder">
-	CONTENT
+	Loading content from Tumblr please wait...
 </div>
 
 
