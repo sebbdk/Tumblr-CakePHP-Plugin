@@ -11,6 +11,11 @@ class TumblrController extends AppController {
 
 	public $uses = array();
 	
+	public function beforeFilter() {
+	    parent::beforeFilter();
+	    $this->Auth->allow('index');
+	}
+	
 	public function index() {
 		
 	}
